@@ -1,0 +1,12 @@
+-- 将 lab 表外键列 admin_id 重命名为 manager_id，与 lab_category.manager_id 命名一致。
+-- 若报错 Field 'manage_id' doesn't have a default value：表上错列名为 manage_id，见 fix_lab_manage_id_typo.sql。
+-- 若启动时报 FK 失败，先执行 fix_lab_manager_id_before_fk.sql 清洗数据。
+-- 执行前请用 SHOW CREATE TABLE lab; 查看外键约束名，替换下方 <FK_NAME>。
+--
+-- MySQL 8.0.4+ 可尝试（可能自动保留外键）：
+-- ALTER TABLE lab RENAME COLUMN admin_id TO manager_id;
+--
+-- 通用写法（需先删外键再重建）：
+-- ALTER TABLE lab DROP FOREIGN KEY <FK_NAME>;
+-- ALTER TABLE lab CHANGE COLUMN admin_id manager_id INT NOT NULL;
+-- ALTER TABLE lab ADD CONSTRAINT fk_lab_manager FOREIGN KEY (manager_id) REFERENCES tb_user (user_id);

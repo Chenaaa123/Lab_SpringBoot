@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验室分类管理 - Lab Management System</title>
+    <link rel="stylesheet" href="/static/css/user-avatar.css">
+    <link rel="stylesheet" href="/static/css/lab-category-manager.css">
+</head>
+<body>
+    <!-- Header with User Avatar -->
+    <header class="header">
+        <div class="header-left">
+            <h1 class="header-title">实验室分类管理</h1>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="/dashboard.html" class="nav-item">Dashboard</a></li>
+                    <li><a href="/labs.html" class="nav-item">实验室</a></li>
+                    <li><a href="/categories.html" class="nav-item active">分类</a></li>
+                    <li><a href="/reservations.html" class="nav-item">预约</a></li>
+                    <li><a href="/repairs.html" class="nav-item">报修</a></li>
+                    <li><a href="/maintenance.html" class="nav-item">检修</a></li>
+                </ul>
+            </nav>
+        </div>
+        
+        <div class="header-right">
+            <!-- User Avatar Container -->
+            <div id="user-avatar-container">
+                <!-- Avatar will be rendered here by JavaScript -->
+                <div class="user-avatar-wrapper">
+                    <img src="/static/images/default-avatar.png" alt="User" class="user-avatar">
+                    <div class="user-info">
+                        <span class="user-name">Loading...</span>
+                        <span class="user-role">User</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Dropdown Menu -->
+            <div id="user-dropdown">
+                <a href="/profile.html" class="user-dropdown-item">
+                    <span class="user-dropdown-icon">👤</span>
+                    <span class="user-dropdown-text">Profile</span>
+                </a>
+                
+                <a href="/settings.html" class="user-dropdown-item">
+                    <span class="user-dropdown-icon">⚙️</span>
+                    <span class="user-dropdown-text">Settings</span>
+                </a>
+                
+                <a href="/help.html" class="user-dropdown-item">
+                    <span class="user-dropdown-icon">❓</span>
+                    <span class="user-dropdown-text">Help</span>
+                </a>
+                
+                <a href="#" class="user-dropdown-item" onclick="logout()">
+                    <span class="user-dropdown-icon">🚪</span>
+                    <span class="user-dropdown-text">Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h2 class="page-title">实验室分类管理</h2>
+            <div class="page-actions">
+                <button id="new-category-btn" class="btn btn-success">
+                    <span>➕</span>
+                    <span>新建分类</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Category List -->
+        <div id="category-list" class="category-list">
+            <div class="loading">
+                正在加载实验室分类...
+            </div>
+        </div>
+    </main>
+
+    <!-- Category Form Modal -->
+    <div id="category-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="form-title" class="modal-title">新建实验室分类</h3>
+                <button class="close-btn" onclick="closeModal('category-modal')">&times;</button>
+            </div>
+            <form id="category-form" class="modal-body">
+                <input type="hidden" name="categoryId" id="categoryId">
+                
+                <div class="form-group">
+                    <label for="name" class="form-label">分类名称 *</label>
+                    <input type="text" id="name" name="name" class="form-control" maxlength="50" required>
+                    <small class="form-help">最多50个字符</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description" class="form-label">分类描述</label>
+                    <textarea id="description" name="description" class="form-control" maxlength="255" rows="3"></textarea>
+                    <small class="form-help">最多255个字符</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="adminId" class="form-label">分类管理员</label>
+                    <select id="adminId" name="adminId" class="form-control">
+                        <option value="">请选择管理员</option>
+                        <!-- 动态加载管理员选项 -->
+                    </select>
+                    <small class="form-help">选择负责此分类的管理员</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="managerId" class="form-label">管理员ID</label>
+                    <input type="number" id="managerId" name="managerId" class="form-control" readonly>
+                    <small class="form-help">自动根据选择的管理员填充</small>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('category-modal')">取消</button>
+                <button type="submit" form="category-form" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manager Assign Modal -->
+    <div id="manager-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">分配管理员</h3>
+                <button class="close-btn" onclick="closeModal('manager-modal')">&times;</button>
+            </div>
+            <form id="manager-form" class="modal-body">
+                <div class="form-group">
+                    <label for="adminUserId" class="form-label">选择管理员 *</label>
+                    <select id="adminUserId" name="adminUserId" class="form-control" required>
+                        <option value="">请选择管理员</option>
+                        <!-- 动态加载管理员选项 -->
+                    </select>
+                    <small class="form-help">选择要分配的管理员</small>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('manager-modal')">取消</button>
+                <button type="submit" form="manager-form" class="btn btn-primary">分配</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/user-avatar.js"></script>
+    <script src="/static/js/lab-category-manager.js"></script>
+    <script>
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        }
+        
+        // Additional page-specific functions
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Lab Category Management loaded');
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+N: New category
+                if (e.ctrlKey && e.key === 'n') {
+                    e.preventDefault();
+                    showCategoryForm();
+                }
+                
+                // Escape: Close modal
+                if (e.key === 'Escape') {
+                    const modals = document.querySelectorAll('.modal');
+                    modals.forEach(modal => {
+                        if (modal.style.display === 'block') {
+                            modal.style.display = 'none';
+                        }
+                    });
+                }
+            });
+            
+            // Add search functionality
+            addSearchFunctionality();
+        });
+        
+        /**
+         * @description 添加搜索功能
+         */
+        function addSearchFunctionality() {
+            const searchDiv = document.createElement('div');
+            searchDiv.className = 'search-container';
+            searchDiv.innerHTML = `
+                <input type="text" id="search-input" class="form-control" placeholder="搜索分类名称或描述...">
+                <button id="search-btn" class="btn btn-primary">搜索</button>
+                <button id="clear-search-btn" class="btn btn-secondary">清除</button>
+            `;
+            
+            // 插入到页面头部
+            const pageHeader = document.querySelector('.page-header');
+            pageHeader.appendChild(searchDiv);
+            
+            // 绑定搜索事件
+            document.getElementById('search-btn').addEventListener('click', performSearch);
+            document.getElementById('clear-search-btn').addEventListener('click', clearSearch);
+            document.getElementById('search-input').addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+        
+        /**
+         * @description 执行搜索
+         */
+        async function performSearch() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            if (!searchTerm) {
+                loadCategories();
+                return;
+            }
+            
+            try {
+                const categories = await getLabCategories();
+                const filteredCategories = categories.filter(category => 
+                    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                );
+                
+                renderCategoryList(filteredCategories);
+            } catch (error) {
+                console.error('搜索失败:', error);
+                alert('搜索失败: ' + error.message);
+            }
+        }
+        
+        /**
+         * @description 清除搜索
+         */
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            loadCategories();
+        }
+        
+        // 添加搜索样式
+        const searchStyles = document.createElement('style');
+        searchStyles.textContent = `
+            .search-container {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                margin-top: 16px;
+            }
+            
+            #search-input {
+                flex: 1;
+                max-width: 300px;
+            }
+            
+            .highlight {
+                background-color: #fff3cd;
+                padding: 2px 4px;
+                border-radius: 3px;
+            }
+        `;
+        document.head.appendChild(searchStyles);
+    </script>
+</body>
+</html>

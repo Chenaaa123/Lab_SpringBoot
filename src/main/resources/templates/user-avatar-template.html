@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Management System</title>
+    <link rel="stylesheet" href="/static/css/user-avatar.css">
+    <style>
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .header-right {
+            position: relative;
+        }
+        
+        /* Navigation */
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 20px;
+            min-height: calc(100vh - 60px);
+            background-color: #f8f9fa;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .content-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        
+        .content-description {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with User Avatar -->
+    <header class="header">
+        <div class="header-left">
+            <h1 class="header-title">Lab Management System</h1>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#" class="nav-item">Dashboard</a></li>
+                    <li><a href="#" class="nav-item">Labs</a></li>
+                    <li><a href="#" class="nav-item">Reservations</a></li>
+                    <li><a href="#" class="nav-item">Repairs</a></li>
+                    <li><a href="#" class="nav-item">Maintenance</a></li>
+                </ul>
+            </nav>
+        </div>
+        
+        <div class="header-right">
+            <!-- User Avatar Container -->
+            <div id="user-avatar-container">
+                <!-- Avatar will be rendered here by JavaScript -->
+                <div class="user-avatar-wrapper">
+                    <img src="/static/images/default-avatar.png" alt="User" class="user-avatar">
+                    <div class="user-info">
+                        <span class="user-name">Loading...</span>
+                        <span class="user-role">User</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Dropdown Menu -->
+            <div id="user-dropdown">
+                <div class="avatar-upload-section">
+                    <button id="avatar-upload-button" class="avatar-upload-button">
+                        Upload Avatar
+                    </button>
+                    <input type="file" id="avatar-upload-input" class="avatar-upload-input" accept="image/*">
+                </div>
+                
+                <a href="#" class="user-dropdown-item">
+                    <span class="user-dropdown-icon">??</span>
+                    <span class="user-dropdown-text">Profile</span>
+                </a>
+                
+                <a href="#" class="user-dropdown-item">
+                    <span class="user-dropdown-icon">??</span>
+                    <span class="user-dropdown-text">Settings</span>
+                </a>
+                
+                <a href="#" class="user-dropdown-item">
+                    <span class="user-dropdown-icon">??</span>
+                    <span class="user-dropdown-text">Help</span>
+                </a>
+                
+                <a href="#" class="user-dropdown-item" onclick="logout()">
+                    <span class="user-dropdown-icon">??</span>
+                    <span class="user-dropdown-text">Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-card">
+            <h2 class="content-title">Welcome to Lab Management System</h2>
+            <p class="content-description">
+                This is a comprehensive laboratory management system that allows users to book labs, 
+                report issues, and track maintenance records. Your avatar is displayed in the top-right corner.
+            </p>
+        </div>
+        
+        <div class="content-card">
+            <h2 class="content-title">Avatar Features</h2>
+            <p class="content-description">
+                <strong>Current Features:</strong>
+            </p>
+            <ul>
+                <li>Automatic avatar display from user profile</li>
+                <li>Support for Base64 image data</li>
+                <li>Support for external image URLs</li>
+                <li>Avatar upload functionality</li>
+                <li>Responsive design for mobile devices</li>
+                <li>Dark mode support</li>
+            </ul>
+        </div>
+        
+        <div class="content-card">
+            <h2 class="content-title">How to Update Avatar</h2>
+            <p class="content-description">
+                1. Click on your avatar in the top-right corner<br>
+                2. Click "Upload Avatar" button<br>
+                3. Select an image file (max 5MB)<br>
+                4. Wait for upload to complete<br>
+                5. Your new avatar will appear automatically
+            </p>
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="/static/js/user-avatar.js"></script>
+    <script>
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        }
+        
+        // Additional page-specific functions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add any page-specific initialization here
+            console.log('Lab Management System loaded');
+        });
+    </script>
+</body>
+</html>
