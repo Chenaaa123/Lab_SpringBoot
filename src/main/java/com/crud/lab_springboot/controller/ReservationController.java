@@ -423,26 +423,27 @@ public class ReservationController {
     }
 
     /**
-     * 故障报修 (Student - 使用完成后，预约状态为已通过，使用状态为已结束时，可进行故障报修)
-     * 创建报修记录，预约状态和使用状态保持不变
+     * 故障报修：预约状态为已通过且使用已完成时，学生/教师仅可对自己的预约报修；
+     * 系统管理员可对任意预约代报修；实验室管理员可对所管辖实验室的预约代报修。
      */
     @PostMapping("/{id}/repair")
     public ResponseMessage<Map<String, Object>> reportRepair(
             @PathVariable("id") Long id,
             @RequestBody Map<String, Object> request
     ) {
-        Integer userId = null;
-        if (request != null && request.get("userId") != null) {
-            try {
-                userId = Integer.valueOf(String.valueOf(request.get("userId")));
-            } catch (NumberFormatException e) {
-                return ResponseMessage.error("userId格式不正确");
-            }
+        if (request == null) {
+            return ResponseMessage.error("请求体不能为空");
+        }
+
+        Integer userId;
+        try {
+            userId = Integer.valueOf(String.valueOf(request.get("userId")));
+        } catch (Exception e) {
+            return ResponseMessage.error("userId格式不正确");
         }
 
         Object titleObj = request.get("title");
         Object descriptionObj = request.get("description");
-
         if (titleObj == null || String.valueOf(titleObj).trim().isEmpty()) {
             return ResponseMessage.error("报修标题不能为空");
         }
@@ -451,34 +452,48 @@ public class ReservationController {
         if (opt.isEmpty()) {
             return ResponseMessage.error("预约记录不存在");
         }
-
         Reservation reservation = opt.get();
 
-        if (userId != null && (reservation.getUser() == null || !userId.equals(reservation.getUser().getUserId()))) {
-            return ResponseMessage.error("只能对自己的预约进行报修");
+        if (!isReservationEligibleForRepair(reservation)) {
+            if (reservation.getStatus() == null || reservation.getStatus() != 1) {
+                return ResponseMessage.error("只能对审核已通过（预约通过）的预约进行报修");
+            }
+            return ResponseMessage.error("只有使用完成后才能进行故障报修（使用状态为已结束，或预约结束时间已过）");
         }
 
-        // 只有预约状态为"已通过"且使用状态为"使用完成"时才能报修（含时间到自动完成，即 endTime 已过）
-        if (reservation.getStatus() != 1) {
-            return ResponseMessage.error("只能对审核通过的预约进行报修");
+        // role 以请求体为主；若前端未传 role，则以 user.role 自动识别，避免管理员被误判为“只能对自己的预约报修”
+        Optional<User> operatorOpt = userRepository.findById(userId);
+        if (operatorOpt.isEmpty()) {
+            return ResponseMessage.error("用户不存在");
+        }
+        User operator = operatorOpt.get();
+        String normalizedRole = normalizeReservationRole(request.get("role"));
+        if (normalizedRole == null || normalizedRole.trim().isEmpty()) {
+            normalizedRole = normalizeReservationRole(operator.getRole());
         }
 
-        boolean useFinished = Integer.valueOf(2).equals(reservation.getUseStatus())
-                || (reservation.getEndTime() != null && reservation.getEndTime().isBefore(LocalDateTime.now()));
-        if (!useFinished) {
-            return ResponseMessage.error("只有使用完成后才能进行故障报修");
+        if ("system_admin".equals(normalizedRole)) {
+            // 系统管理员可对所有预约报修，无需额外限制
+        } else if ("lab_admin".equals(normalizedRole)) {
+            Lab lab = reservation.getLab();
+            if (lab == null || lab.getManager() == null || !userId.equals(lab.getManager().getUserId())) {
+                return ResponseMessage.error("只能对所管辖实验室的预约进行报修");
+            }
+        } else {
+            if (reservation.getUser() == null || !userId.equals(reservation.getUser().getUserId())) {
+                return ResponseMessage.error("只能对自己的预约进行报修");
+            }
         }
 
-        // 创建报修记录
         Repair repair = new Repair();
-        repair.setUser(reservation.getUser());
+        repair.setUser(operator);
         repair.setLab(reservation.getLab());
         repair.setReservation(reservation);
         repair.setTitle(String.valueOf(titleObj).trim());
         if (descriptionObj != null) {
             repair.setDescription(String.valueOf(descriptionObj).trim());
         }
-        repair.setStatus(0); // 待处理
+        repair.setStatus(0);
 
         LocalDateTime now = LocalDateTime.now();
         repair.setCreatedAt(now);
@@ -495,8 +510,32 @@ public class ReservationController {
         result.put("reservationId", reservation.getId());
         result.put("orderNo", reservation.getOrderNo());
         result.put("message", "报修提交成功");
-
         return ResponseMessage.success(result);
+    }
+
+    private static boolean isReservationEligibleForRepair(Reservation reservation) {
+        if (reservation.getStatus() == null || reservation.getStatus() != 1) {
+            return false;
+        }
+        return Integer.valueOf(2).equals(reservation.getUseStatus())
+                || (reservation.getEndTime() != null && reservation.getEndTime().isBefore(LocalDateTime.now()));
+    }
+
+    private static String normalizeReservationRole(Object roleObj) {
+        if (roleObj == null) {
+            return null;
+        }
+        String r = String.valueOf(roleObj).trim();
+        if (r.isEmpty()) {
+            return null;
+        }
+        return switch (r) {
+            case "系统管理员", "admin", "systemAdmin", "system-admin" -> "system_admin";
+            case "实验室管理员", "labManager", "lab-manager" -> "lab_admin";
+            case "学生", "student" -> "student";
+            case "教师", "teacher" -> "teacher";
+            default -> r;
+        };
     }
 
     /**
